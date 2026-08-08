@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  nama         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("KASIR")
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  orders       Order[]   @relation("OrderCreator")
+  expenses     Expense[]
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  nama      String
+  noHp      String    @unique
+  alamat    String?
+  createdAt DateTime  @default(now())
+  orders    Order[]
+}
+
+model Service {
+  id       String      @id @default(cuid())
+  nama     String
+  satuan   String // KG | PCS
+  harga    Int
+  aktif    Boolean     @default(true)
+  items    OrderItem[]
+}
+
+model Order {
+  id          String         @id @default(cuid())
+  noOrder     String         @unique
+  customerId  String
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  status      String         @default("DITERIMA") // DITERIMA | DIPROSES | SELESAI | DIAMBIL
+  statusBayar String         @default("LUNAS") // BELUM_LUNAS | LUNAS | DP
+  dp          Float          @default(0)
+  total       Float
+  waContacted Boolean        @default(false)
+  keterangan  String?
+  paidAt      DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  createdById String
+  createdBy   User           @relation("OrderCreator", fields: [createdById], references: [id])
+  items       OrderItem[]
+  payments    Payment[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+  qty       Float
+  harga     Int
+  subtotal  Float
+}
+
+model Payment {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  jumlah    Float
+  metode    String
+  createdAt DateTime @default(now())
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  kategori    String
+  jumlah      Float
+  keterangan  String?
+  tanggal     DateTime @default(now())
+  createdAt   DateTime @default(now())
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+}
