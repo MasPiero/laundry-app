@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { MessageCircle, CheckCheck, Pencil, Loader2, Trash2, ExternalLink, CreditCard, ArrowRight } from "lucide-react";
+import { MessageCircle, CheckCheck, Pencil, Loader2, Trash2, ExternalLink, CreditCard, ArrowRight, Lock } from "lucide-react";
 import {
   updateOrderStatus,
   updateOrderPayment,
@@ -61,6 +61,7 @@ export function OrderActions({
   const [newPay, setNewPay] = React.useState(statusBayar);
   const [dp, setDp] = React.useState(String(dpValue));
   const [saving, setSaving] = React.useState(false);
+  const [payError, setPayError] = React.useState("");
 
   const serviceMap = new Map(services.map((s) => [s.id, s]));
   const sisa = Math.max(total - (statusBayar === "DP" ? dpValue : 0), 0);
@@ -72,8 +73,13 @@ export function OrderActions({
 
   async function savePayment() {
     setSaving(true);
-    await updateOrderPayment(orderId, newPay, Number(dp) || 0);
+    setPayError("");
+    const res = await updateOrderPayment(orderId, newPay, Number(dp) || 0);
     setSaving(false);
+    if (res && "error" in res && res.error) {
+      setPayError(res.error);
+      return;
+    }
     router.refresh();
   }
 
@@ -171,31 +177,43 @@ export function OrderActions({
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <select
-              value={newPay}
-              onChange={(e) => setNewPay(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
-            >
-              {Object.entries(PAYMENT_STATUS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.label}
-                </option>
-              ))}
-            </select>
-            {newPay === "DP" && (
-              <Input
-                type="number"
-                value={dp}
-                onChange={(e) => setDp(e.target.value)}
-                placeholder="Nominal DP (Rp)"
-              />
-            )}
-            <Button className="w-full" onClick={savePayment} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              Simpan Pembayaran
-            </Button>
-          </div>
+          {statusBayar === "LUNAS" ? (
+            <div className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-100/70 px-3 py-2.5 text-sm font-medium text-emerald-700">
+              <Lock className="h-4 w-4" /> Pembayaran sudah LUNAS & terkunci
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <select
+                value={newPay}
+                onChange={(e) => {
+                  setNewPay(e.target.value);
+                  setPayError("");
+                }}
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"
+              >
+                {Object.entries(PAYMENT_STATUS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
+              {newPay === "DP" && (
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={dp}
+                  onChange={(e) => setDp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Nominal DP (Rp)"
+                />
+              )}
+              <Button className="w-full" onClick={savePayment} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Simpan Pembayaran
+              </Button>
+            </div>
+          )}
+
+          {payError && <p className="mt-3 text-sm text-rose-600">{payError}</p>}
 
           {(statusBayar === "DP" || statusBayar === "BELUM_LUNAS") && (
             <p className="mt-3 text-xs leading-relaxed text-slate-400">

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,18 +44,24 @@ export function LoginForm() {
       )}
       <div>
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" placeholder="owner@laundry.com" required autoComplete="email" />
+        <div className="relative">
+          <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input id="email" name="email" type="email" placeholder="owner@laundry.com" required autoComplete="email" className="pl-9" />
+        </div>
       </div>
       <div>
         <Label htmlFor="password">Password</Label>
-        <Input id="password" name="password" type="password" placeholder="••••••••" required autoComplete="current-password" />
+        <div className="relative">
+          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input id="password" name="password" type="password" placeholder="••••••••" required autoComplete="current-password" className="pl-9" />
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Masuk
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+        {loading ? "Memproses..." : "Masuk"}
       </Button>
-      <div className="rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500">
-        <p className="mb-1 font-semibold text-slate-600">Akun demo:</p>
+      <div className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-xs text-teal-800">
+        <p className="mb-1 font-semibold text-teal-900">Akun demo:</p>
         <p>Owner : owner@laundry.com / owner123</p>
         <p>Kasir : kasir@laundry.com / kasir123</p>
       </div>

@@ -4,11 +4,14 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
+import { normalizeRupiah } from "@/lib/money";
 
 const serviceSchema = z.object({
   nama: z.string().min(1, "Nama wajib diisi").max(100),
   satuan: z.enum(["KG", "PCS"]),
-  harga: z.coerce.number().int().min(0, "Harga tidak boleh negatif").refine((v) => v > 0, "Harga wajib lebih dari 0"),
+  harga: z
+    .preprocess(normalizeRupiah, z.coerce.number().int())
+    .refine((v) => v > 0, "Harga wajib lebih dari 0"),
 });
 
 export type ServiceState = { error?: string; ok?: boolean };

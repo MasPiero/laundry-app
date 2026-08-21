@@ -194,7 +194,14 @@ export function OrderForm({
       {statusBayar === "DP" && (
         <div>
           <Label>Nominal DP (Rp)</Label>
-          <Input type="number" min={0} value={dp} onChange={(e) => setDp(e.target.value)} placeholder="misal: 50000" />
+          <Input
+            type="text"
+            inputMode="numeric"
+            min={0}
+            value={dp}
+            onChange={(e) => setDp(e.target.value.replace(/\D/g, ""))}
+            placeholder="misal: 50000"
+          />
         </div>
       )}
 

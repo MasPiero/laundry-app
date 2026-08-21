@@ -44,8 +44,8 @@ model Order {
   customer    Customer       @relation(fields: [customerId], references: [id])
   status      String         @default("DITERIMA") // DITERIMA | DIPROSES | SELESAI | DIAMBIL
   statusBayar String         @default("LUNAS") // BELUM_LUNAS | LUNAS | DP
-  dp          Float          @default(0)
-  total       Float
+  dp          Int            @default(0)
+  total       Int
   waContacted Boolean        @default(false)
   keterangan  String?
   paidAt      DateTime?
@@ -65,14 +65,14 @@ model OrderItem {
   service   Service @relation(fields: [serviceId], references: [id])
   qty       Float
   harga     Int
-  subtotal  Float
+  subtotal  Int
 }
 
 model Payment {
   id        String  @id @default(cuid())
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  jumlah    Float
+  jumlah    Int
   metode    String
   createdAt DateTime @default(now())
 }
@@ -80,7 +80,7 @@ model Payment {
 model Expense {
   id          String   @id @default(cuid())
   kategori    String
-  jumlah      Float
+  jumlah      Int
   keterangan  String?
   tanggal     DateTime @default(now())
   createdAt   DateTime @default(now())

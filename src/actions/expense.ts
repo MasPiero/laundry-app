@@ -4,10 +4,11 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
+import { rupiahPositive } from "@/lib/money";
 
 const expenseSchema = z.object({
   kategori: z.string().min(1, "Kategori wajib diisi").max(50),
-  jumlah: z.coerce.number().positive("Jumlah harus lebih dari 0"),
+  jumlah: rupiahPositive,
   keterangan: z.string().max(300).optional().or(z.literal("")),
   tanggal: z.coerce.date({ message: "Tanggal tidak valid" }),
 });

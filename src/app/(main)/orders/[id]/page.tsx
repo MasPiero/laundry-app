@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import QRCode from "qrcode";
 import { ArrowLeft, Phone, MapPin, CalendarDays, User } from "lucide-react";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +14,11 @@ import { OrderActions } from "@/components/order-actions";
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {
   await requireUser();
+
+  const h = headers();
+  const host = h.get("x-forwarded-host") || h.get("host") || "localhost:3000";
+  const proto = h.get("x-forwarded-proto") || "http";
+  const origin = `${proto}://${host}`;
 
   const [order, services] = await Promise.all([
     prisma.order.findUnique({
@@ -30,6 +37,9 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const st = ORDER_STATUS[order.status as keyof typeof ORDER_STATUS];
   const pb = PAYMENT_STATUS[order.statusBayar as keyof typeof PAYMENT_STATUS];
   const sisa = Math.max(order.total - (order.statusBayar === "DP" ? order.dp : 0), 0);
+
+  const trackUrl = `${origin}/track/${order.noOrder}`;
+  const qrDataUrl = await QRCode.toDataURL(trackUrl, { width: 256, margin: 1 });
 
   return (
     <div className="space-y-6">
@@ -160,7 +170,26 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   </div>
                 )}
 
-                <p className="mt-5 text-center text-xs text-slate-400">
+                <div className="my-5 flex flex-col items-center justify-center gap-1.5 border-t border-dashed border-slate-200 pt-5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={qrDataUrl}
+                    alt={`QR Code cek status order ${order.noOrder}`}
+                    className="h-32 w-32"
+                  />
+                  <p className="text-xs font-medium text-slate-500">
+                    Scan QR untuk cek status cucian
+                  </p>
+                  <Link
+                    href={trackUrl}
+                    className="text-xs text-teal-600 hover:underline"
+                    target="_blank"
+                  >
+                    {trackUrl}
+                  </Link>
+                </div>
+
+                <p className="mt-3 text-center text-xs text-slate-400">
                   Terima kasih telah menggunakan LaundryKu
                 </p>
               </div>

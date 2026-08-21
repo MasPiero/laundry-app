@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
+import { rupiahNonNegative } from "@/lib/money";
 
 export type OrderState = { error?: string; ok?: boolean };
 
@@ -16,7 +17,7 @@ const orderSchema = z.object({
   customerId: z.string(),
   status: z.enum(["DITERIMA", "DIPROSES", "SELESAI", "DIAMBIL"]),
   statusBayar: z.enum(["BELUM_LUNAS", "LUNAS", "DP"]),
-  dp: z.coerce.number().min(0, "Nominal DP tidak boleh negatif").default(0),
+  dp: rupiahNonNegative.default(0),
   keterangan: z.string().max(500).nullish(),
   items: z.array(itemSchema).min(1, "Minimal 1 item layanan"),
 });
@@ -156,12 +157,26 @@ export async function updateOrderStatus(id: string, status: string) {
   revalidatePath("/");
 }
 
-export async function updateOrderPayment(id: string, statusBayar: string, dp?: number) {
+export async function updateOrderPayment(
+  id: string,
+  statusBayar: string,
+  dp?: number
+): Promise<{ ok?: boolean; error?: string } | void> {
   await requireUser();
+
+  const order = await prisma.order.findUnique({ where: { id } });
+  if (!order) return { error: "Order tidak ditemukan." };
+
+  if (order.statusBayar === "LUNAS" && statusBayar !== "LUNAS") {
+    return {
+      error: "Order ini sudah LUNAS dan terkunci. Ubah kembali ke DP/belum lunas tidak diizinkan agar pendapatan tidak terhitung ganda.",
+    };
+  }
+
   if (statusBayar === "LUNAS") {
     await prisma.order.update({
       where: { id },
-      data: { statusBayar: "LUNAS", dp: 0, paidAt: new Date() },
+      data: { statusBayar: "LUNAS", dp: 0, paidAt: order.paidAt ?? new Date() },
     });
   } else if (statusBayar === "DP") {
     await prisma.order.update({
